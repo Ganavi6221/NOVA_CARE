@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "773183996238",
+    "project_id": "nova-care-f4b80",
+    "storage_bucket": "nova-care-f4b80.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773183996238:android:0d1a5c5256952d5dabde1f",
+        "android_client_info": {
+          "package_name": "com.example.connect_crisis"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKBKxn0xwmhm2WQ3-M41bYQIj2BgpnVZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773183996238:android:97508e0315997bf0abde1f",
+        "android_client_info": {
+          "package_name": "com.example.nova_care"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKBKxn0xwmhm2WQ3-M41bYQIj2BgpnVZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
