@@ -12,6 +12,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedType = 'hospital';
   String searchQuery = '';
   Set<String> favoriteIds = {};
+  bool isLoading = false;
   final TextEditingController _searchController = TextEditingController();
 
   final Map<String, String> categories = {
@@ -28,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'ambulance': Icons.local_shipping,
   };
 
-  // Toggle favorite (stored in memory only for web)
+  // Toggle favorite (without persistent storage)
   void _toggleFavorite(String id) {
     setState(() {
       if (favoriteIds.contains(id)) {
@@ -37,6 +38,66 @@ class _HomeScreenState extends State<HomeScreen> {
         favoriteIds.add(id);
       }
     });
+  }
+
+  // Show contact info (instead of direct call)
+  void _showContactDialog(String phoneNumber, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Contact Number:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            SelectableText(
+              phoneNumber,
+              style: const TextStyle(fontSize: 18, color: Colors.blue),
+            ),
+            const SizedBox(height: 16),
+            const Text('PLACING CALL', style: TextStyle(fontWeight: FontWeight.bold,color: Color.fromARGB(255, 231, 5, 5))),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show location info (instead of opening maps)
+  void _showLocationDialog(String location, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Location:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            SelectableText(
+              location,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            const Text('REDIRECTING TO MAP', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   // Show details bottom sheet
@@ -121,25 +182,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 
                 const SizedBox(height: 30),
 
-                // Info message for web
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade700),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Copy the contact number to call',
-                          style: TextStyle(fontSize: 13),
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: contact.isNotEmpty 
+                            ? () => _showContactDialog(contact, name) 
+                            : null,
+                        icon: const Icon(Icons.call),
+                        label: const Text('View Contact'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: area.isNotEmpty 
+                            ? () => _showLocationDialog(area, name) 
+                            : null,
+                        icon: const Icon(Icons.directions),
+                        label: const Text('Location'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -187,7 +268,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Pull to refresh
   Future<void> _onRefresh() async {
+    setState(() {
+      isLoading = true;
+    });
     await Future.delayed(const Duration(seconds: 1));
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -220,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Positioned.fill(
-            child: Container(color: Colors.black.withOpacity(0.25)),
+            child: Container(color: Colors.black.withValues(alpha: 0.25)),
           ),
           Column(
             children: [
@@ -257,6 +344,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
+
+              // Emergency Call Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: ElevatedButton.icon(
+                  onPressed: () => _showContactDialog('112', 'Emergency'),
+                  icon: const Icon(Icons.phone, size: 28),
+                  label: const Text('Emergency Call', style: TextStyle(fontSize: 18)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: const Size(double.infinity, 60),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
 
               Expanded(
                 child: RefreshIndicator(
@@ -318,6 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                           final name = (itemData['Name'] ?? itemData['name'] ?? 'No Name').toString();
                           final contact = (itemData['Contact'] ?? itemData['contact'] ?? '').toString();
+                          print('DEBUG: contact value = "$contact", isEmpty = ${contact.isEmpty}'); // ADD THIS
                           final area = (itemData['Area'] ?? itemData['area'] ?? '').toString();
                           final isFavorite = favoriteIds.contains(serviceId);
 
@@ -370,14 +478,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     
-                                    // Favorite button only (no call button for web)
-                                    IconButton(
-                                      icon: Icon(
-                                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                                        color: isFavorite ? Colors.red : Colors.grey,
-                                      ),
-                                      onPressed: () => _toggleFavorite(serviceId),
-                                      tooltip: 'Favorite',
+                                    // Action buttons
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Call button - shows contact in dialog
+                                        if (true)
+                                          IconButton(
+                                            icon: const Icon(Icons.phone, color: Colors.green),
+                                            onPressed: () => _showContactDialog(contact, name),
+                                            tooltip: 'View Contact',
+                                          ),
+                                        
+                                        // Favorite button
+                                        IconButton(
+                                          icon: Icon(
+                                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                                            color: isFavorite ? Colors.red : Colors.grey,
+                                          ),
+                                          onPressed: () => _toggleFavorite(serviceId),
+                                          tooltip: 'Favorite',
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -513,7 +635,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(
             Icons.medical_services_outlined,
             size: 80,
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -528,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(
             'Pull down to refresh',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 14,
             ),
           ),
@@ -546,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(
             Icons.search_off,
             size: 80,
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -561,7 +683,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(
             'Try a different search term',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 14,
             ),
           ),
